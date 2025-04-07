@@ -17,8 +17,7 @@ import openai
 
 from dotenv import load_dotenv
 
-
-PROJECT_PATH = Path.cwd()
+PROJECT_PATH = Path.cwd().parent
 
 sys.path.append(str(PROJECT_PATH))
 
@@ -33,35 +32,44 @@ API_KEY = os.getenv("OPEN_AI_API_KEY")
 OpenAI.api_key = API_KEY
 
 # initialize SQL database
+# define the connection details for SQL Database
 db_user = os.getenv("user")
 db_password = os.getenv("password")
 db_host = os.getenv("host")
 db_name = os.getenv("database")
 
+# create DB connection string
 db_uri = f"postgresql://{db_user}:{db_password}@{db_host}/{db_name}"
+
+# connect to the DB
 db = SQLDatabase.from_uri(db_uri)
 
+# instantiate OpenAI model
 llm = OpenAI(openai_api_key=API_KEY, temperature=0.2, verbose=True)
 
-# create SQL chain instance to build SQL queries
+#
+# Create a chain to interact with SQL database using LLM model and SQL DB
 db_chain = SQLDatabaseChain.from_llm(llm, db, verbose=True)
 
 # User Query
 user_query = "Describe the median short rates during the last year period."
 
-# generate the query
+# Execute the chain - i.e sequence of actions to interact with SQL database based on user query
 response = db_chain.run(user_query)
+
 pprint.pprint(response)
 
 # SQL Agents
 
 """
-Initializes an SQL agent. And vreates an angent with the specified properties
-
-
+Initializes an SQL agent. And creates an agent with the specified properties
+trough_month
+start_date
+end_date
 """
 
 agent_executor = create_sql_agent(
+
     llm=llm,
     toolkit=SQLDatabaseToolkit(db=db, llm=llm),
     verbose=True,
@@ -93,14 +101,16 @@ few_shots = {
 
 # create embeddings
 embeddings = OpenAIEmbeddings(openai_api_key=API_KEY)
-
+# for each zero shot question key and sql query value store them as langchain Document
 few_shot_docs = [
     Document(page_content=question, metadata={"sql_query": few_shots[question]})
     for question in few_shots.keys()
 ]
 
+# create a vector DB using the langchain docs and embeddings
 vector_db = FAISS.from_documents(few_shot_docs, embeddings)
 
+# create a vector store retriever
 retriever = vector_db.as_retriever()
 
 # create retriever tool for getting similar examples
@@ -119,7 +129,7 @@ agent_executor = create_sql_agent(
     llm=llm,
     toolkit=toolkit,
     verbose=True,
-    agent_type=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+    agent_  type=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
     extra_tools=[retriever_tool],
     top_k=10,
 )
@@ -128,3 +138,7 @@ agent_executor = create_sql_agent(
 query_result = agent_executor.run("""Discuss the yield curve, their average values, over the lass economic cycle.""")
 
 print("Query result:", query_result)
+
+
+# perform description of table task - does agent understand the schema of database
+
