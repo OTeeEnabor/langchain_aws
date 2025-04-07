@@ -1,6 +1,7 @@
 venv
 .env
 *.ini
+initialize-agent.py
 # add private keys
 *.pem
 *.ppk
