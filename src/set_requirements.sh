@@ -5,8 +5,9 @@
 echo "pandas" > requirements.txt
 echo "scikit-learn" >> requirements.txt
 echo "pandas-datareader" >> requirements.txt
-echo "plotly redis" >> requirements.txt
-echo "langchain langchain-experimental" >> requirements.txt
+echo "redis" >> requirements.txt
+echo "langchain" >> requirements.txt
+echo "langchain-experimental" >> requirements.txt
 echo "openai" >> requirements.txt
 echo "tiktoken" >> requirements.txt
 echo "faiss-cpu" >> requirements.txt
