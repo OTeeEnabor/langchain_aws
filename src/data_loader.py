@@ -175,6 +175,7 @@ def insert_business_cycle_data():
     conn.commit()
     # close connection
     conn.close()
+
 class DataLoader:
      # load database configurations
     config = load_config()
@@ -218,12 +219,19 @@ class DataLoader:
             "IPN213111S",
             "PCU213111213111",
         ]
+
+    def _connect_to_db(self):
+        self.config = load_config()
+        self.conn = connect(self.config)
+
+        return self.conn
     
     def clean_data(self, data):
         """Function to clean data, remove leading/trailing single quotes, and convert to numeric"""
         cleaned_data = data.map(lambda x: x.strip("'") if isinstance(x, str) else x)
         cleaned_data = cleaned_data.apply(pd.to_numeric, errors="coerce")
         return cleaned_data
+    
     def fetch_and_insert_data(self, tickers, table_name):
         start_date = "2000-12-31"
         end_date = datetime.now().strftime("%Y-%m-%d")
@@ -246,10 +254,13 @@ class DataLoader:
             data.to_csv(temp_df, index_label="Date", header=False)
             # open the file
             f = open(temp_df, "r")
-            with self.conn.cursor() as curr:
+            # connect to database
+            db_con = self._connect_to_db()
+            with db_con.cursor() as curr:
                 curr.copy_from(f, table_name, sep=",")
-                self.conn.commit()   
+                db_con.commit()   
             print(f"Data inserted into {table_name} table")
+            db_con.close()
 
         except Exception as error:
             print(f"Failed to fetch and insert the data: {error}")
@@ -260,14 +271,21 @@ class DataLoader:
 
 
 def main():
+    # create table
     create_tables()
+    # insert busisness cycle data
     insert_business_cycle_data()
-    #
+    # instantiate loader object
     loader = DataLoader()
+    # set table names
     table_names = ["yield_curve_prices","production_data"]#["economic_indicators","yield_curve_prices","production_data"]
+    # set tickers for 
     tickers = [loader.yield_curve_tickers, loader.production_data_tickers]#[loader.economic_indicators_tickers, loader.yield_curve_tickers, loader.production_data_tickers]
     for i,table in enumerate(table_names):
-        loader.fetch_and_insert_data(tickers[i], table)
+        loader.fetch_and_insert_data(tickers[i], table)#f"langchainecodata.{table}")
     loader.conn.close()
 if __name__ == "__main__":
     main()
+
+
+# SELECT grantee, privilege_type FROM information_schema.role_schema_grants WHERE schema_name = 'public' AND grantee = 'lang_user';

@@ -28,7 +28,7 @@ load_dotenv()
 
 
 # Set up OpenAI API Key
-API_KEY = os.getenv("OPEN_AI_API_KEY")
+API_KEY = os.getenv("OPENAI_API_KEY")
 OpenAI.api_key = API_KEY
 
 # initialize SQL database
@@ -99,7 +99,7 @@ few_shots = {
     "List the top 3 longest economic expansions since 2000.": "SELECT Start_Date, End_Date FROM business_cycles WHERE Phase = 'Expansion' AND Start_Date >= '2000-01-01 00:00:00' ORDER BY (julianday(End_Date) - julianday(Start_Date)) DESC LIMIT 3;",
 }
 
-# create embeddings
+# create a retriever for few shot examples embeddings
 embeddings = OpenAIEmbeddings(openai_api_key=API_KEY)
 # for each zero shot question key and sql query value store them as langchain Document
 few_shot_docs = [
@@ -129,7 +129,7 @@ agent_executor = create_sql_agent(
     llm=llm,
     toolkit=toolkit,
     verbose=True,
-    agent_  type=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+    agent_type=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
     extra_tools=[retriever_tool],
     top_k=10,
 )
